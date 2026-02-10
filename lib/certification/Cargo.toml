@@ -1,0 +1,16 @@
+[package]
+name = "common_certification"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+common_canister_types = { path = "../canister/types" }
+common_contract_api = { path = "../contract/api" }
+candid = { workspace = true }
+serde = { workspace = true }
+ic-canister-sig-creation = { workspace = true }
+ic-representation-independent-hash = { workspace = true }
+ic-certification = { workspace = true }
+ic-signature-verification = { workspace = true }

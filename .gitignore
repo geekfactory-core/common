@@ -1,0 +1,25 @@
+# Various IDEs and Editors
+.vscode/*
+!.vscode/settings.json
+.idea/
+.zed/
+**/*~
+*.iml
+*.wasm
+
+# Mac OSX temporary files
+.DS_Store
+**/.DS_Store
+
+# dfx temporary files
+.dfx/
+.env
+
+# rust
+target/
+
+Cargo.lock
+
+# frontend code
+node_modules/
+dist/

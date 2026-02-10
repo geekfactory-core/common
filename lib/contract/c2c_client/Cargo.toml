@@ -1,0 +1,13 @@
+[package]
+name = "common_contract_c2c_client"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+common_contract_api = { path = "../api" }
+common_canister_types = { path = "../../canister/types" }
+candid = { workspace = true }
+serde = { workspace = true }
+ic-cdk = { workspace = true }

@@ -1,0 +1,146 @@
+type ActivateContractArgs = record {
+  check_permission_strategy : CheckPermissionStrategy;
+  contract_owner : principal;
+};
+type ActivateContractError = variant {
+  ValidationFailed : record { reason : text };
+  ContractActivationNotRequired;
+  ContractCallError : record { reason : text };
+  AlreadyActivated : record { owner : principal };
+  ContractLocked : record { lock : DelayedTimestampMillis };
+};
+type ActivateContractResponse = variant { Ok; Err : ActivateContractError };
+type AddContractControllerArgs = record { controller : principal };
+type AddContractControllerError = variant {
+  ContractNotActivated;
+  AddControllerDelay : record { delay : DelayedTimestampMillis };
+  CertificateNotExpired;
+  PermissionDenied;
+  ManagementCallError : record { reason : text };
+  CriticalCyclesLevel : record { critical_threshold_cycles : nat };
+  ContractLocked : record { lock : DelayedTimestampMillis };
+};
+type AddContractControllerResponse = variant {
+  Ok;
+  Err : AddContractControllerError;
+};
+type Args = record { canister_id : principal };
+type CanisterMetrics = record {
+  stable_memory_size : nat64;
+  cycles : nat;
+  heap_memory_size : nat64;
+};
+type CanisterStatusResult = record {
+  memory_metrics : MemoryMetrics;
+  status : CanisterStatusType;
+  memory_size : nat;
+  ready_for_migration : bool;
+  version : nat64;
+  cycles : nat;
+  settings : DefiniteCanisterSettings;
+  query_stats : QueryStats;
+  idle_cycles_burned_per_day : nat;
+  module_hash : opt blob;
+  reserved_cycles : nat;
+};
+type CanisterStatusType = variant { stopped; stopping; running };
+type CheckPermissionStrategy = variant {
+  CheckCallerIsDeployer;
+  CheckContractActivationCode : record { code : text };
+};
+type ContractCertificate = record {
+  deployer : principal;
+  contract_canister : principal;
+  hub_canister : principal;
+  contract_wasm_hash : text;
+  expiration : nat64;
+  contract_template_id : nat64;
+};
+type DefiniteCanisterSettings = record {
+  freezing_threshold : nat;
+  wasm_memory_threshold : nat;
+  environment_variables : vec EnvironmentVariable;
+  controllers : vec principal;
+  reserved_cycles_limit : nat;
+  log_visibility : LogVisibility;
+  wasm_memory_limit : nat;
+  memory_allocation : nat;
+  compute_allocation : nat;
+};
+type DelayedTimestampMillis = record { time : nat64; delay : nat64 };
+type EnvironmentVariable = record { value : text; name : text };
+type GetCanisterMetricsError = variant { PermissionDenied };
+type GetCanisterMetricsResponse = variant {
+  Ok : GetCanisterMetricsResult;
+  Err : GetCanisterMetricsError;
+};
+type GetCanisterMetricsResult = record { metrics : CanisterMetrics };
+type GetCanisterStatusError = variant {
+  ManagementCallError : record { reason : text };
+};
+type GetCanisterStatusResponse = variant {
+  Ok : GetCanisterStatusResult;
+  Err : GetCanisterStatusError;
+};
+type GetCanisterStatusResult = record {
+  canister_status_response : CanisterStatusResult;
+};
+type GetContractCertificateError = variant {
+  ContractCallError : record { reason : text };
+};
+type GetContractCertificateResponse = variant {
+  Ok : GetContractCertificateResult;
+  Err : GetContractCertificateError;
+};
+type GetContractCertificateResult = record {
+  certificate : SignedContractCertificate;
+};
+type GetContractOwnerError = variant {
+  ContractNotActivated;
+  ContractActivationNotRequired;
+};
+type GetContractOwnerResponse = variant {
+  Ok : GetContractOwnerResult;
+  Err : GetContractOwnerError;
+};
+type GetContractOwnerResult = record { owner : principal };
+type InitContractArgs = record {
+  certificate : SignedContractCertificate;
+  contract_activation_code_hash : opt blob;
+  root_public_key_raw : blob;
+};
+type LogVisibility = variant {
+  controllers;
+  public;
+  allowed_viewers : vec principal;
+};
+type MemoryMetrics = record {
+  wasm_binary_size : nat;
+  wasm_chunk_store_size : nat;
+  canister_history_size : nat;
+  stable_memory_size : nat;
+  snapshots_size : nat;
+  wasm_memory_size : nat;
+  global_memory_size : nat;
+  custom_sections_size : nat;
+};
+type QueryStats = record {
+  response_payload_bytes_total : nat;
+  num_instructions_total : nat;
+  num_calls_total : nat;
+  request_payload_bytes_total : nat;
+};
+type SignedContractCertificate = record {
+  signature : blob;
+  contract_certificate : ContractCertificate;
+};
+service : (InitContractArgs) -> {
+  activate_contract : (ActivateContractArgs) -> (ActivateContractResponse);
+  add_contract_controller : (AddContractControllerArgs) -> (
+      AddContractControllerResponse,
+    );
+  get_canister_metrics : (record {}) -> (GetCanisterMetricsResponse) query;
+  get_canister_status : (Args) -> (GetCanisterStatusResponse);
+  get_contract_certificate : (record {}) -> (GetContractCertificateResponse);
+  get_contract_owner : (record {}) -> (GetContractOwnerResponse);
+}

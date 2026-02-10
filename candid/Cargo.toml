@@ -1,0 +1,12 @@
+[package]
+name = "hello_canister_candid"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+common_canister_api = { path = "../lib/canister/api" }
+common_contract_api = { path = "../lib/contract/api" }
+candid = { workspace = true }
+icgeek_candid_gen = { workspace = true }

@@ -1,0 +1,11 @@
+[package]
+name = "referral_canister_api"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+common_canister_types = { path = "../../canister/types" }
+common_contract_api = { path = "../../contract/api" }
+candid = { workspace = true }
+serde = { workspace = true }
+ic-cdk = { workspace = true }

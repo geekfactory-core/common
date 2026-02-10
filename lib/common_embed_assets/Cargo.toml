@@ -1,0 +1,14 @@
+[package]
+name = "common_embed_assets"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+ic-cdk = { workspace = true }
+ic-http-certification = { workspace = true }
+ic-asset-certification = { workspace = true }
+include_dir = { workspace = true }
+globset = { workspace = true }
+lazy_static = { workspace = true }
+flate2 = { workspace = true }
+brotli = { workspace = true }

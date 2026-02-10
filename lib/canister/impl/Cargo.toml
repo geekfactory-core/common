@@ -1,0 +1,38 @@
+[package]
+name = "common_canister_impl"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+common_canister_types = { path = "../types" }
+candid = { workspace = true }
+serde = { workspace = true }
+rmp-serde = { workspace = true }
+ic-cdk = { workspace = true }
+async-trait = { workspace = true }
+ic-ledger-types = { workspace = true }
+icrc-ledger-types = { workspace = true }
+ic-cdk-macros = { workspace = true }
+ic-cdk-timers = { workspace = true }
+ic-representation-independent-hash = { workspace = true }
+ic-certification = { workspace = true }
+ic-verify-bls-signature = { workspace = true }
+serde_cbor = { workspace = true }
+serde_repr = { workspace = true }
+serde_bytes = { workspace = true }
+thiserror = { workspace = true }
+leb128 = { workspace = true }
+hex = { workspace = true }
+sha2 = { workspace = true }
+der = { workspace = true }
+ciborium = { workspace = true }
+ic-stable-structures = { workspace = true }
+futures = { workspace = true }
+
+[dev-dependencies]
+actix-rt = "2.9.0"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(network, values("local", "test"))'] }
