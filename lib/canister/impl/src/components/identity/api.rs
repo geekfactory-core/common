@@ -25,6 +25,8 @@ pub struct OpenIdCredential {
 }
 
 pub type UserNumber = u64;
+pub type AccountNumber = u64;
+pub type FrontendHostname = String;
 #[derive(CandidType, Deserialize, Debug)]
 pub enum MetadataMapItem1 {
     #[serde(rename = "map")]
@@ -280,6 +282,56 @@ pub enum OpenidCredentialRemoveRet {
     Ok,
     Err(OpenIdCredentialRemoveError),
 }
+
+#[derive(CandidType, Deserialize)]
+pub enum AccountDelegationError {
+    InternalCanisterError(String),
+    Unauthorized(Principal),
+    NoSuchDelegation,
+}
+
+#[derive(CandidType, Deserialize)]
+pub struct PrepareAccountDelegation {
+    pub user_key: PublicKey,
+    pub expiration: Timestamp,
+}
+
+pub type PrepareAccountDelegationRet =
+    std::result::Result<PrepareAccountDelegation, AccountDelegationError>;
+
+#[derive(CandidType, Deserialize, Debug)]
+pub struct AccountInfo {
+    pub account_number: Option<AccountNumber>,
+    pub origin: FrontendHostname,
+    pub last_used: Option<Timestamp>,
+    pub name: Option<String>,
+}
+
+#[derive(CandidType, Deserialize, Debug)]
+pub struct GetAccountsResponse {
+    pub accounts: Vec<AccountInfo>,
+    pub default_account: AccountNumber,
+}
+
+#[derive(CandidType, Deserialize)]
+pub enum GetAccountsError {
+    NoSuchAnchor,
+    InternalCanisterError(String),
+    Unauthorized(Principal),
+    NoAccounts,
+}
+
+pub type GetAccountsRet = std::result::Result<GetAccountsResponse, GetAccountsError>;
+
+#[derive(CandidType, Deserialize)]
+pub enum GetDefaultAccountError {
+    InternalCanisterError(String),
+    Unauthorized(Principal),
+    NoSuchAnchor,
+    NoSuchOrigin { anchor_number: UserNumber },
+}
+
+pub type GetDefaultAccountRet = std::result::Result<AccountInfo, GetDefaultAccountError>;
 
 pub struct Service(pub Principal);
 impl Service {
