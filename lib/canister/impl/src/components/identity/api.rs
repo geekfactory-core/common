@@ -307,21 +307,13 @@ pub struct AccountInfo {
     pub name: Option<String>,
 }
 
-#[derive(CandidType, Deserialize, Debug)]
-pub struct GetAccountsResponse {
-    pub accounts: Vec<AccountInfo>,
-    pub default_account: AccountNumber,
-}
-
 #[derive(CandidType, Deserialize)]
 pub enum GetAccountsError {
-    NoSuchAnchor,
     InternalCanisterError(String),
     Unauthorized(Principal),
-    NoAccounts,
 }
 
-pub type GetAccountsRet = std::result::Result<GetAccountsResponse, GetAccountsError>;
+pub type GetAccountsRet = std::result::Result<Vec<AccountInfo>, GetAccountsError>;
 
 #[derive(CandidType, Deserialize)]
 pub enum GetDefaultAccountError {
