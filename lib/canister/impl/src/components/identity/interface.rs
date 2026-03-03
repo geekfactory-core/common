@@ -12,7 +12,7 @@ use crate::{
 use super::api::{
     AccountNumber, AuthnMethodConfirmRet, AuthnMethodData, AuthnMethodRegisterRet,
     AuthnMethodRegistrationModeEnterRet, AuthnMethodRegistrationModeExitRet, AuthnMethodRemoveRet,
-    GetAccountsRet, GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet,
+    GetAccountDelegationRet, GetAccountsRet, GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet,
     IdentityInfoRet, IdentityNumber, OpenidCredentialRemoveRet, PrepareAccountDelegationRet,
     PublicKey, UserNumber,
 };
@@ -153,6 +153,20 @@ pub trait Identity: Sync + Send {
         &self,
         response_data: &[u8],
     ) -> Result<GetDelegationResponse, String>;
+
+    fn build_get_account_delegation_request(
+        &self,
+        user_number: &UserNumber,
+        frontend_hostname: String,
+        account_number: Option<AccountNumber>,
+        session_key: Vec<u8>,
+        timestamp: TimestampNanos,
+    ) -> CanisterRequest;
+
+    fn decode_get_account_delegation_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<GetAccountDelegationRet, String>;
 
     fn build_get_default_account_request(
         &self,

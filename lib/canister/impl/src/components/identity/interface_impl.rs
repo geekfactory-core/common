@@ -8,10 +8,10 @@ use ic_representation_independent_hash::{representation_independent_hash, Value}
 use super::{
     api::{
         AccountNumber, AuthnMethodData, AuthnMethodRegisterRet,
-        AuthnMethodRegistrationModeEnterRet, AuthnMethodRemoveRet, GetAccountsRet,
-        GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet, IdentityInfoRet,
-        IdentityNumber, OpenidCredentialRemoveRet, PrepareAccountDelegationRet, PublicKey,
-        UserNumber,
+        AuthnMethodRegistrationModeEnterRet, AuthnMethodRemoveRet, GetAccountDelegationRet,
+        GetAccountsRet, GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet,
+        IdentityInfoRet, IdentityNumber, OpenidCredentialRemoveRet, PrepareAccountDelegationRet,
+        PublicKey, UserNumber,
     },
     interface::Identity,
 };
@@ -324,6 +324,34 @@ impl Identity for IdentityImpl {
         response_data: &[u8],
     ) -> Result<GetDelegationResponse, String> {
         Decode!(response_data, GetDelegationResponse).map_err(|error| format!("{error:?}"))
+    }
+
+    fn build_get_account_delegation_request(
+        &self,
+        user_number: &UserNumber,
+        frontend_hostname: String,
+        account_number: Option<AccountNumber>,
+        session_key: Vec<u8>,
+        timestamp: TimestampNanos,
+    ) -> CanisterRequest {
+        self.build_canister_request(
+            "get_account_delegation",
+            Encode!(
+                user_number,
+                &frontend_hostname,
+                &account_number,
+                &session_key,
+                &(timestamp as u64)
+            )
+            .unwrap(),
+        )
+    }
+
+    fn decode_get_account_delegation_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<GetAccountDelegationRet, String> {
+        Decode!(response_data, GetAccountDelegationRet).map_err(|error| format!("{error:?}"))
     }
 
     fn build_get_default_account_request(

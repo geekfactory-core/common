@@ -299,6 +299,8 @@ pub struct PrepareAccountDelegation {
 pub type PrepareAccountDelegationRet =
     std::result::Result<PrepareAccountDelegation, AccountDelegationError>;
 
+pub type GetAccountDelegationRet = std::result::Result<SignedDelegation, AccountDelegationError>;
+
 #[derive(CandidType, Deserialize, Debug)]
 pub struct AccountInfo {
     pub account_number: Option<AccountNumber>,
