@@ -7,9 +7,11 @@ use ic_representation_independent_hash::{representation_independent_hash, Value}
 
 use super::{
     api::{
-        AuthnMethodData, AuthnMethodRegisterRet, AuthnMethodRegistrationModeEnterRet,
-        AuthnMethodRemoveRet, GetDelegationResponse, IdentityAuthnInfoRet, IdentityInfoRet,
-        IdentityNumber, OpenidCredentialRemoveRet, PublicKey, UserNumber,
+        AccountNumber, AuthnMethodData, AuthnMethodRegisterRet,
+        AuthnMethodRegistrationModeEnterRet, AuthnMethodRemoveRet, GetAccountDelegationRet,
+        GetAccountsRet, GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet,
+        IdentityInfoRet, IdentityNumber, OpenidCredentialRemoveRet, PrepareAccountDelegationRet,
+        PublicKey, UserNumber,
     },
     interface::Identity,
 };
@@ -269,6 +271,35 @@ impl Identity for IdentityImpl {
         .map_err(|error| format!("{error:?}"))
     }
 
+    fn build_prepare_account_delegation_request(
+        &self,
+        user_number: &UserNumber,
+        frontend_hostname: String,
+        account_number: Option<AccountNumber>,
+        session_key: Vec<u8>,
+        delegation_duration: Duration,
+    ) -> IcAgentRequestDefinition {
+        self.build_call(
+            "prepare_account_delegation",
+            Encode!(
+                user_number,
+                &frontend_hostname,
+                &account_number,
+                &session_key,
+                &Some(delegation_duration.as_nanos() as u64)
+            )
+            .unwrap(),
+            CallHttpSettings::default(),
+        )
+    }
+
+    fn decode_prepare_account_delegation_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<PrepareAccountDelegationRet, String> {
+        Decode!(response_data, PrepareAccountDelegationRet).map_err(|error| format!("{error:?}"))
+    }
+
     fn build_get_delegation_request(
         &self,
         user_number: &UserNumber,
@@ -293,6 +324,69 @@ impl Identity for IdentityImpl {
         response_data: &[u8],
     ) -> Result<GetDelegationResponse, String> {
         Decode!(response_data, GetDelegationResponse).map_err(|error| format!("{error:?}"))
+    }
+
+    fn build_get_account_delegation_request(
+        &self,
+        user_number: &UserNumber,
+        frontend_hostname: String,
+        account_number: Option<AccountNumber>,
+        session_key: Vec<u8>,
+        timestamp: TimestampNanos,
+    ) -> CanisterRequest {
+        self.build_canister_request(
+            "get_account_delegation",
+            Encode!(
+                user_number,
+                &frontend_hostname,
+                &account_number,
+                &session_key,
+                &(timestamp as u64)
+            )
+            .unwrap(),
+        )
+    }
+
+    fn decode_get_account_delegation_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<GetAccountDelegationRet, String> {
+        Decode!(response_data, GetAccountDelegationRet).map_err(|error| format!("{error:?}"))
+    }
+
+    fn build_get_default_account_request(
+        &self,
+        user_number: &UserNumber,
+        frontend_hostname: String,
+    ) -> IcAgentRequestDefinition {
+        self.build_call(
+            "get_default_account",
+            Encode!(user_number, &frontend_hostname).unwrap(),
+            CallHttpSettings::default(),
+        )
+    }
+
+    fn decode_get_default_account_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<GetDefaultAccountRet, String> {
+        Decode!(response_data, GetDefaultAccountRet).map_err(|error| format!("{error:?}"))
+    }
+
+    fn build_get_accounts_request(
+        &self,
+        user_number: &UserNumber,
+        frontend_hostname: String,
+    ) -> IcAgentRequestDefinition {
+        self.build_call(
+            "get_accounts",
+            Encode!(user_number, &frontend_hostname).unwrap(),
+            CallHttpSettings::default(),
+        )
+    }
+
+    fn decode_get_accounts_response(&self, response_data: &[u8]) -> Result<GetAccountsRet, String> {
+        Decode!(response_data, GetAccountsRet).map_err(|error| format!("{error:?}"))
     }
 
     fn get_delegation_signature_msg(

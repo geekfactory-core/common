@@ -1,11 +1,13 @@
 use super::execute_ic_request;
 use crate::handlers::ic_agent::executor::deserialize_cbor_data;
 use crate::handlers::ic_agent::types::{ReadStateResponse, RejectResponse};
+use crate::serializer::deserialize;
 use candid::Principal;
 use common_canister_types::CallCanisterSignedRequest;
 use ic_cdk::call::{CallRejected, CallResult, Error};
 use ic_cdk::management_canister::HttpMethod;
 use ic_certification::{Certificate, Label, LookupResult};
+use serde::{Deserialize, Serialize};
 use std::future::Future;
 use std::pin::Pin;
 use std::str::from_utf8;
@@ -76,7 +78,13 @@ pub async fn execute_ic_call(
                 "read state body after transform is empty".to_owned(),
             )))
         } else {
-            Ok(http_response.body)
+            deserialize::<RequestStatusResponse>(&http_response.body)
+                .map_err(|error| format!("Error deserializing read state body: {error}"))
+                .and_then(|response| match response {
+                    RequestStatusResponse::Replied { content } => Ok(content),
+                    RequestStatusResponse::Other { description } => Err(description),
+                })
+                .map_err(|error| Error::CallRejected(CallRejected::with_rejection(0u32, error)))
         }
     })
 }
@@ -111,4 +119,82 @@ pub fn get_reply_from_call_response_certificate(
     } else {
         Err("No status in certificate".to_string())
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum RequestStatusResponse {
+    Replied { content: Vec<u8> },
+    Other { description: String },
+}
+
+pub fn lookup_request_status(certificate: Certificate, request_id: &[u8]) -> RequestStatusResponse {
+    let path_status: [Label; 3] = ["request_status".into(), request_id.into(), "status".into()];
+
+    if let LookupResult::Found(status) = certificate.tree.lookup_path(&path_status) {
+        match from_utf8(status) {
+            Ok("replied") => lookup_reply(&certificate, request_id),
+            Ok("rejected") => lookup_rejection(&certificate, request_id),
+            Ok("done") => RequestStatusResponse::Other {
+                description: "done".to_string(),
+            },
+            Ok("processing") => RequestStatusResponse::Other {
+                description: "processing".to_string(),
+            },
+            Ok("received") => RequestStatusResponse::Other {
+                description: "received".to_string(),
+            },
+            _ => RequestStatusResponse::Other {
+                description: "Invalid status".to_string(),
+            },
+        }
+    } else {
+        RequestStatusResponse::Other {
+            description: "No status in certificate".to_string(),
+        }
+    }
+}
+
+pub(crate) fn lookup_reply(certificate: &Certificate, request_id: &[u8]) -> RequestStatusResponse {
+    let path: [Label; 3] = ["request_status".into(), request_id.into(), "reply".into()];
+    if let LookupResult::Found(reply_data) = certificate.tree.lookup_path(&path) {
+        RequestStatusResponse::Replied {
+            content: Vec::from(reply_data),
+        }
+    } else {
+        RequestStatusResponse::Other {
+            description: "No reply in certificate".to_string(),
+        }
+    }
+}
+
+pub(crate) fn lookup_rejection(
+    certificate: &Certificate,
+    request_id: &[u8],
+) -> RequestStatusResponse {
+    let reject_code = lookup_reject_code(certificate, request_id);
+    let reject_message = lookup_reject_message(certificate, request_id);
+
+    RequestStatusResponse::Other {
+        description: format!(
+            "rejection, reject_code: {reject_code}, reject_message \"{reject_message}\""
+        ),
+    }
+}
+
+pub(crate) fn lookup_reject_code(certificate: &Certificate, request_id: &[u8]) -> String {
+    let path: [Label; 3] = [
+        "request_status".into(),
+        request_id.into(),
+        "reject_code".into(),
+    ];
+    format!("{:?}", certificate.tree.lookup_path(&path))
+}
+
+pub(crate) fn lookup_reject_message(certificate: &Certificate, request_id: &[u8]) -> String {
+    let path: [Label; 3] = [
+        "request_status".into(),
+        request_id.into(),
+        "reject_message".into(),
+    ];
+    format!("{:?}", certificate.tree.lookup_path(&path))
 }

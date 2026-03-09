@@ -10,10 +10,11 @@ use crate::{
 };
 
 use super::api::{
-    AuthnMethodConfirmRet, AuthnMethodData, AuthnMethodRegisterRet,
+    AccountNumber, AuthnMethodConfirmRet, AuthnMethodData, AuthnMethodRegisterRet,
     AuthnMethodRegistrationModeEnterRet, AuthnMethodRegistrationModeExitRet, AuthnMethodRemoveRet,
-    GetDelegationResponse, IdentityAuthnInfoRet, IdentityInfoRet, IdentityNumber,
-    OpenidCredentialRemoveRet, PublicKey, UserNumber,
+    GetAccountDelegationRet, GetAccountsRet, GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet,
+    IdentityInfoRet, IdentityNumber, OpenidCredentialRemoveRet, PrepareAccountDelegationRet,
+    PublicKey, UserNumber,
 };
 
 #[async_trait]
@@ -126,6 +127,20 @@ pub trait Identity: Sync + Send {
         response_data: &[u8],
     ) -> Result<(Vec<u8>, TimestampNanos), String>;
 
+    fn build_prepare_account_delegation_request(
+        &self,
+        user_number: &UserNumber,
+        frontend_hostname: String,
+        account_number: Option<AccountNumber>,
+        session_key: Vec<u8>,
+        delegation_duration: Duration,
+    ) -> IcAgentRequestDefinition;
+
+    fn decode_prepare_account_delegation_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<PrepareAccountDelegationRet, String>;
+
     fn build_get_delegation_request(
         &self,
         user_number: &UserNumber,
@@ -138,6 +153,39 @@ pub trait Identity: Sync + Send {
         &self,
         response_data: &[u8],
     ) -> Result<GetDelegationResponse, String>;
+
+    fn build_get_account_delegation_request(
+        &self,
+        user_number: &UserNumber,
+        frontend_hostname: String,
+        account_number: Option<AccountNumber>,
+        session_key: Vec<u8>,
+        timestamp: TimestampNanos,
+    ) -> CanisterRequest;
+
+    fn decode_get_account_delegation_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<GetAccountDelegationRet, String>;
+
+    fn build_get_default_account_request(
+        &self,
+        user_number: &UserNumber,
+        frontend_hostname: String,
+    ) -> IcAgentRequestDefinition;
+
+    fn decode_get_default_account_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<GetDefaultAccountRet, String>;
+
+    fn build_get_accounts_request(
+        &self,
+        user_number: &UserNumber,
+        frontend_hostname: String,
+    ) -> IcAgentRequestDefinition;
+
+    fn decode_get_accounts_response(&self, response_data: &[u8]) -> Result<GetAccountsRet, String>;
 
     fn get_delegation_signature_msg(
         &self,
