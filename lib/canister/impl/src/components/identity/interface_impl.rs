@@ -8,10 +8,11 @@ use ic_representation_independent_hash::{representation_independent_hash, Value}
 use super::{
     api::{
         AccountNumber, AuthnMethodData, AuthnMethodRegisterRet,
-        AuthnMethodRegistrationModeEnterRet, AuthnMethodRemoveRet, GetAccountDelegationRet,
-        GetAccountsRet, GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet,
-        IdentityInfoRet, IdentityNumber, OpenidCredentialRemoveRet, PrepareAccountDelegationRet,
-        PublicKey, UserNumber,
+        AuthnMethodRegistrationModeEnterRet, AuthnMethodRemoveRet,
+        EmailRecoveryCredentialRemoveRet, GetAccountDelegationRet, GetAccountsRet,
+        GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet, IdentityInfoRet,
+        IdentityNumber, OpenidCredentialRemoveRet, PrepareAccountDelegationRet, PublicKey,
+        UserNumber,
     },
     interface::Identity,
 };
@@ -181,6 +182,26 @@ impl Identity for IdentityImpl {
         response_data: &[u8],
     ) -> Result<OpenidCredentialRemoveRet, String> {
         Decode!(response_data, OpenidCredentialRemoveRet).map_err(|error| format!("{error:?}"))
+    }
+
+    fn build_email_recovery_credential_remove_request(
+        &self,
+        identity_number: &IdentityNumber,
+        address: &String,
+    ) -> IcAgentRequestDefinition {
+        self.build_call(
+            "email_recovery_credential_remove",
+            Encode!(identity_number, address).unwrap(),
+            CallHttpSettings::default(),
+        )
+    }
+
+    fn decode_email_recovery_credential_remove_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<EmailRecoveryCredentialRemoveRet, String> {
+        Decode!(response_data, EmailRecoveryCredentialRemoveRet)
+            .map_err(|error| format!("{error:?}"))
     }
 
     fn build_get_principal_request(

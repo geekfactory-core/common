@@ -24,6 +24,13 @@ pub struct OpenIdCredential {
     pub last_usage_timestamp: Option<Timestamp>,
 }
 
+#[derive(CandidType, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct EmailRecoveryCredential {
+    pub address: String,
+    pub created_at: Timestamp,
+    pub last_used: Option<Timestamp>,
+}
+
 pub type UserNumber = u64;
 pub type AccountNumber = u64;
 pub type FrontendHostname = String;
@@ -253,6 +260,8 @@ pub struct IdentityInfo {
     pub metadata: Box<MetadataMapV2>,
     pub authn_method_registration: Option<AuthnMethodRegistrationInfo>,
     pub openid_credentials: Option<Vec<OpenIdCredential>>,
+    #[serde(default)]
+    pub email_recovery: Vec<EmailRecoveryCredential>,
     // new fields
     pub name: Option<String>,
     pub created_at: Option<Timestamp>,
@@ -282,6 +291,26 @@ pub enum OpenidCredentialRemoveRet {
     Ok,
     Err(OpenIdCredentialRemoveError),
 }
+
+#[derive(CandidType, Deserialize, Debug, PartialEq, Eq)]
+pub enum EmailRecoveryError {
+    Unauthorized(Principal),
+    NonceUnknown,
+    NonceExpired,
+    DomainNotAllowlisted(String),
+    DohFetchFailed(String),
+    DomainNotSupported(String),
+    EmailVerificationFailed(String),
+    DkimLeafMismatch,
+    NoDkimLeafExpected,
+    AddressMismatch,
+    SubjectNotSigned,
+    AddressAlreadyRegistered,
+    AddressNotRegistered,
+    InternalCanisterError(String),
+}
+
+pub type EmailRecoveryCredentialRemoveRet = std::result::Result<(), EmailRecoveryError>;
 
 #[derive(CandidType, Deserialize)]
 pub enum AccountDelegationError {

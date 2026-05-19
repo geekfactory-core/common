@@ -12,9 +12,10 @@ use crate::{
 use super::api::{
     AccountNumber, AuthnMethodConfirmRet, AuthnMethodData, AuthnMethodRegisterRet,
     AuthnMethodRegistrationModeEnterRet, AuthnMethodRegistrationModeExitRet, AuthnMethodRemoveRet,
-    GetAccountDelegationRet, GetAccountsRet, GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet,
-    IdentityInfoRet, IdentityNumber, OpenidCredentialRemoveRet, PrepareAccountDelegationRet,
-    PublicKey, UserNumber,
+    EmailRecoveryCredentialRemoveRet, GetAccountDelegationRet, GetAccountsRet,
+    GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet, IdentityInfoRet,
+    IdentityNumber, OpenidCredentialRemoveRet, PrepareAccountDelegationRet, PublicKey,
+    UserNumber,
 };
 
 #[async_trait]
@@ -82,6 +83,17 @@ pub trait Identity: Sync + Send {
         &self,
         response_data: &[u8],
     ) -> Result<OpenidCredentialRemoveRet, String>;
+
+    fn build_email_recovery_credential_remove_request(
+        &self,
+        identity_number: &IdentityNumber,
+        address: &String,
+    ) -> IcAgentRequestDefinition;
+
+    fn decode_email_recovery_credential_remove_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<EmailRecoveryCredentialRemoveRet, String>;
 
     #[allow(clippy::ptr_arg)]
     fn build_get_principal_request(
