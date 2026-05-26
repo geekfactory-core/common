@@ -260,8 +260,7 @@ pub struct IdentityInfo {
     pub metadata: Box<MetadataMapV2>,
     pub authn_method_registration: Option<AuthnMethodRegistrationInfo>,
     pub openid_credentials: Option<Vec<OpenIdCredential>>,
-    #[serde(default)]
-    pub email_recovery: Vec<EmailRecoveryCredential>,
+    pub email_recovery: Option<Vec<EmailRecoveryCredential>>,
     // new fields
     pub name: Option<String>,
     pub created_at: Option<Timestamp>,
