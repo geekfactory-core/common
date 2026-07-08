@@ -11,8 +11,8 @@ use super::{
         AuthnMethodRegistrationModeEnterRet, AuthnMethodRemoveRet,
         EmailRecoveryCredentialRemoveRet, GetAccountDelegationRet, GetAccountsRet,
         GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet, IdentityInfoRet,
-        IdentityNumber, OpenidCredentialRemoveRet, PrepareAccountDelegationRet, PublicKey,
-        UserNumber,
+        IdentityNumber, McpConfig, McpSetConfigRet, OpenidCredentialRemoveRet,
+        PrepareAccountDelegationRet, PublicKey, UserNumber,
     },
     interface::Identity,
 };
@@ -20,7 +20,9 @@ use crate::components::identity::api::{AuthnMethodConfirmRet, RegistrationId};
 use crate::{
     components::identity::api::AuthnMethodRegistrationModeExitRet,
     handlers::{
-        ic_agent::CallHttpSettings, ic_request::builder::CanisterRequest, IcAgentRequestDefinition,
+        ic_agent::{CallHttpSettings, QueryHttpSettings},
+        ic_request::builder::CanisterRequest,
+        IcAgentRequestDefinition,
     },
 };
 
@@ -408,6 +410,40 @@ impl Identity for IdentityImpl {
 
     fn decode_get_accounts_response(&self, response_data: &[u8]) -> Result<GetAccountsRet, String> {
         Decode!(response_data, GetAccountsRet).map_err(|error| format!("{error:?}"))
+    }
+
+    fn build_mcp_get_config_request(
+        &self,
+        identity_number: &IdentityNumber,
+    ) -> IcAgentRequestDefinition {
+        IcAgentRequestDefinition::Query {
+            request: self
+                .build_canister_request("mcp_get_config", Encode!(identity_number).unwrap()),
+            settings: QueryHttpSettings::default(),
+        }
+    }
+
+    fn decode_mcp_get_config_response(&self, response_data: &[u8]) -> Result<McpConfig, String> {
+        Decode!(response_data, McpConfig).map_err(|error| format!("{error:?}"))
+    }
+
+    fn build_mcp_set_config_request(
+        &self,
+        identity_number: &IdentityNumber,
+        config: &McpConfig,
+    ) -> IcAgentRequestDefinition {
+        self.build_call(
+            "mcp_set_config",
+            Encode!(identity_number, config).unwrap(),
+            CallHttpSettings::default(),
+        )
+    }
+
+    fn decode_mcp_set_config_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<McpSetConfigRet, String> {
+        Decode!(response_data, McpSetConfigRet).map_err(|error| format!("{error:?}"))
     }
 
     fn get_delegation_signature_msg(

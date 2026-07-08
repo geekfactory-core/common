@@ -14,8 +14,8 @@ use super::api::{
     AuthnMethodRegistrationModeEnterRet, AuthnMethodRegistrationModeExitRet, AuthnMethodRemoveRet,
     EmailRecoveryCredentialRemoveRet, GetAccountDelegationRet, GetAccountsRet,
     GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet, IdentityInfoRet,
-    IdentityNumber, OpenidCredentialRemoveRet, PrepareAccountDelegationRet, PublicKey,
-    UserNumber,
+    IdentityNumber, McpConfig, McpSetConfigRet, OpenidCredentialRemoveRet,
+    PrepareAccountDelegationRet, PublicKey, UserNumber,
 };
 
 #[async_trait]
@@ -84,6 +84,7 @@ pub trait Identity: Sync + Send {
         response_data: &[u8],
     ) -> Result<OpenidCredentialRemoveRet, String>;
 
+    #[allow(clippy::ptr_arg)]
     fn build_email_recovery_credential_remove_request(
         &self,
         identity_number: &IdentityNumber,
@@ -198,6 +199,24 @@ pub trait Identity: Sync + Send {
     ) -> IcAgentRequestDefinition;
 
     fn decode_get_accounts_response(&self, response_data: &[u8]) -> Result<GetAccountsRet, String>;
+
+    fn build_mcp_get_config_request(
+        &self,
+        identity_number: &IdentityNumber,
+    ) -> IcAgentRequestDefinition;
+
+    fn decode_mcp_get_config_response(&self, response_data: &[u8]) -> Result<McpConfig, String>;
+
+    fn build_mcp_set_config_request(
+        &self,
+        identity_number: &IdentityNumber,
+        config: &McpConfig,
+    ) -> IcAgentRequestDefinition;
+
+    fn decode_mcp_set_config_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<McpSetConfigRet, String>;
 
     fn get_delegation_signature_msg(
         &self,

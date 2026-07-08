@@ -355,6 +355,18 @@ pub enum GetDefaultAccountError {
 
 pub type GetDefaultAccountRet = std::result::Result<AccountInfo, GetDefaultAccountError>;
 
+#[derive(CandidType, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct McpConfig {
+    pub enabled: bool,
+    pub url: Option<String>,
+}
+
+#[derive(CandidType, Deserialize, Debug, PartialEq, Eq)]
+pub enum McpSetConfigRet {
+    Ok,
+    Err(String),
+}
+
 pub struct Service(pub Principal);
 impl Service {
     pub async fn authn_method_register(
