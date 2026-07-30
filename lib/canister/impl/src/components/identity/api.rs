@@ -31,6 +31,13 @@ pub struct EmailRecoveryCredential {
     pub last_used: Option<Timestamp>,
 }
 
+/// Verified email bound to an anchor (attribute source; parallel to email recovery).
+#[derive(CandidType, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct VerifiedEmail {
+    pub address: String,
+    pub verified_at: Timestamp,
+}
+
 pub type UserNumber = u64;
 pub type AccountNumber = u64;
 pub type FrontendHostname = String;
@@ -261,7 +268,7 @@ pub struct IdentityInfo {
     pub authn_method_registration: Option<AuthnMethodRegistrationInfo>,
     pub openid_credentials: Option<Vec<OpenIdCredential>>,
     pub email_recovery: Option<Vec<EmailRecoveryCredential>>,
-    // new fields
+    pub verified_emails: Option<Vec<VerifiedEmail>>,
     pub name: Option<String>,
     pub created_at: Option<Timestamp>,
 }
@@ -291,25 +298,42 @@ pub enum OpenidCredentialRemoveRet {
     Err(OpenIdCredentialRemoveError),
 }
 
+/// DoH multi-provider failure detail (II `DohFailureReason`).
 #[derive(CandidType, Deserialize, Debug, PartialEq, Eq)]
-pub enum EmailRecoveryError {
+pub enum DohFailureReason {
+    AllProvidersFailed,
+    QuorumFailed { agreeing: u32, total: u32 },
+    ResponseMalformed(String),
+}
+
+/// Shared error type for email-recovery and verified-email II endpoints
+/// (`EmailChallengeError` in Internet Identity candid).
+#[derive(CandidType, Deserialize, Debug, PartialEq, Eq)]
+pub enum EmailChallengeError {
     Unauthorized(Principal),
     NonceUnknown,
     NonceExpired,
     DomainNotAllowlisted(String),
-    DohFetchFailed(String),
+    DohFetchFailed(DohFailureReason),
     DomainNotSupported(String),
     EmailVerificationFailed(String),
     DkimLeafMismatch,
+    EmptyDkimLeafHops,
     NoDkimLeafExpected,
     AddressMismatch,
     SubjectNotSigned,
     AddressAlreadyRegistered,
     AddressNotRegistered,
+    InvalidEmailAddress(String),
+    LimitReached { limit: u8 },
     InternalCanisterError(String),
 }
 
-pub type EmailRecoveryCredentialRemoveRet = std::result::Result<(), EmailRecoveryError>;
+/// Backward-compatible alias used by email-recovery remove call sites.
+pub type EmailRecoveryError = EmailChallengeError;
+
+pub type EmailRecoveryCredentialRemoveRet = std::result::Result<(), EmailChallengeError>;
+pub type VerifiedEmailRemoveRet = std::result::Result<(), EmailChallengeError>;
 
 #[derive(CandidType, Deserialize)]
 pub enum AccountDelegationError {

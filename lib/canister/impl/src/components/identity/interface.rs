@@ -15,7 +15,7 @@ use super::api::{
     EmailRecoveryCredentialRemoveRet, GetAccountDelegationRet, GetAccountsRet,
     GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet, IdentityInfoRet,
     IdentityNumber, McpConfig, McpSetConfigRet, OpenidCredentialRemoveRet,
-    PrepareAccountDelegationRet, PublicKey, UserNumber,
+    PrepareAccountDelegationRet, PublicKey, UserNumber, VerifiedEmailRemoveRet,
 };
 
 #[async_trait]
@@ -95,6 +95,18 @@ pub trait Identity: Sync + Send {
         &self,
         response_data: &[u8],
     ) -> Result<EmailRecoveryCredentialRemoveRet, String>;
+
+    #[allow(clippy::ptr_arg)]
+    fn build_verified_email_remove_request(
+        &self,
+        identity_number: &IdentityNumber,
+        address: &String,
+    ) -> IcAgentRequestDefinition;
+
+    fn decode_verified_email_remove_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<VerifiedEmailRemoveRet, String>;
 
     #[allow(clippy::ptr_arg)]
     fn build_get_principal_request(
@@ -205,7 +217,12 @@ pub trait Identity: Sync + Send {
         identity_number: &IdentityNumber,
     ) -> IcAgentRequestDefinition;
 
-    fn decode_mcp_get_config_response(&self, response_data: &[u8]) -> Result<McpConfig, String>;
+    /// Decodes II `mcp_get_config` response (`opt McpConfig`).
+    /// `None` means the anchor never wrote MCP config (equivalent to disabled).
+    fn decode_mcp_get_config_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<Option<McpConfig>, String>;
 
     fn build_mcp_set_config_request(
         &self,

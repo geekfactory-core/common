@@ -12,7 +12,7 @@ use super::{
         EmailRecoveryCredentialRemoveRet, GetAccountDelegationRet, GetAccountsRet,
         GetDefaultAccountRet, GetDelegationResponse, IdentityAuthnInfoRet, IdentityInfoRet,
         IdentityNumber, McpConfig, McpSetConfigRet, OpenidCredentialRemoveRet,
-        PrepareAccountDelegationRet, PublicKey, UserNumber,
+        PrepareAccountDelegationRet, PublicKey, UserNumber, VerifiedEmailRemoveRet,
     },
     interface::Identity,
 };
@@ -204,6 +204,25 @@ impl Identity for IdentityImpl {
     ) -> Result<EmailRecoveryCredentialRemoveRet, String> {
         Decode!(response_data, EmailRecoveryCredentialRemoveRet)
             .map_err(|error| format!("{error:?}"))
+    }
+
+    fn build_verified_email_remove_request(
+        &self,
+        identity_number: &IdentityNumber,
+        address: &String,
+    ) -> IcAgentRequestDefinition {
+        self.build_call(
+            "verified_email_remove",
+            Encode!(identity_number, address).unwrap(),
+            CallHttpSettings::default(),
+        )
+    }
+
+    fn decode_verified_email_remove_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<VerifiedEmailRemoveRet, String> {
+        Decode!(response_data, VerifiedEmailRemoveRet).map_err(|error| format!("{error:?}"))
     }
 
     fn build_get_principal_request(
@@ -423,8 +442,11 @@ impl Identity for IdentityImpl {
         }
     }
 
-    fn decode_mcp_get_config_response(&self, response_data: &[u8]) -> Result<McpConfig, String> {
-        Decode!(response_data, McpConfig).map_err(|error| format!("{error:?}"))
+    fn decode_mcp_get_config_response(
+        &self,
+        response_data: &[u8],
+    ) -> Result<Option<McpConfig>, String> {
+        Decode!(response_data, Option<McpConfig>).map_err(|error| format!("{error:?}"))
     }
 
     fn build_mcp_set_config_request(
