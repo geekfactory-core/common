@@ -33,14 +33,15 @@ fn is_common_encoding(file_path: &str) -> bool {
         || JS_MATCHER.is_match(file_path)
         || CSS_MATCHER.is_match(file_path)
 }
-/// Rescursively collect all assets from the provided directory
+/// Recursively collect assets, optionally preparing compressed representations.
 fn collect_assets<'content, 'path>(
     dir: &'content Dir<'path>,
     assets: &mut Vec<Asset<'content, 'path>>,
+    compress: bool,
 ) {
     for file in dir.files() {
         let path = file.path().to_string_lossy();
-        if is_common_encoding(path.as_ref()) {
+        if compress && is_common_encoding(path.as_ref()) {
             // Add Brotli and Gzip for common encodings.
             let mut brotli = brotli::CompressorWriter::new(Vec::new(), 4096, 11, 22);
             brotli.write_all(file.contents()).unwrap();
@@ -55,7 +56,7 @@ fn collect_assets<'content, 'path>(
     }
 
     for dir in dir.dirs() {
-        collect_assets(dir, assets);
+        collect_assets(dir, assets, compress);
     }
 }
 
@@ -74,7 +75,19 @@ macro_rules! create_asset_pattern {
     };
 }
 
+/// Certifies the embedded assets and generates Brotli and gzip representations at runtime.
 pub fn certify_all_assets(assets_dir: &'static Dir<'_>, canister_id: Option<&str>) {
+    certify_assets(assets_dir, canister_id, true);
+}
+
+/// Certifies the embedded assets using representations supplied by the build.
+///
+/// Include the original files and their `.br` and `.gz` siblings for HTML, JavaScript and CSS.
+pub fn certify_precompressed_assets(assets_dir: &'static Dir<'_>, canister_id: Option<&str>) {
+    certify_assets(assets_dir, canister_id, false);
+}
+
+fn certify_assets(assets_dir: &'static Dir<'_>, canister_id: Option<&str>, compress: bool) {
     // 1. Define the asset certification configurations.
     let encodings = vec![
         AssetEncoding::Brotli.default_config(),
@@ -127,7 +140,7 @@ pub fn certify_all_assets(assets_dir: &'static Dir<'_>, canister_id: Option<&str
         ));
     }
     // 3. Collect all assets from the frontend build directory.
-    collect_assets(assets_dir, &mut assets);
+    collect_assets(assets_dir, &mut assets, compress);
 
     ASSET_ROUTER.with_borrow_mut(|asset_router| {
         // 4. Certify the assets using the `certify_assets` function from the `ic-asset-certification` crate.
@@ -138,4 +151,54 @@ pub fn certify_all_assets(assets_dir: &'static Dir<'_>, canister_id: Option<&str
         // 5. Set the canister's certified data.
         certified_data_set(asset_router.root_hash());
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use include_dir::{DirEntry, File};
+
+    #[test]
+    fn collects_precompressed_assets_without_generating_more() {
+        let nested = [
+            DirEntry::File(File::new("assets/main.js", b"script")),
+            DirEntry::File(File::new("assets/main.js.br", b"brotli bytes")),
+            DirEntry::File(File::new("assets/main.js.gz", b"gzip bytes")),
+            DirEntry::File(File::new("assets/logo.svg", b"svg")),
+        ];
+        let entries = [
+            DirEntry::File(File::new("index.html", b"html")),
+            DirEntry::File(File::new("index.html.br", b"brotli html")),
+            DirEntry::File(File::new("index.html.gz", b"gzip html")),
+            DirEntry::Dir(Dir::new("assets", &nested)),
+        ];
+        let dir = Dir::new("", &entries);
+        let mut assets = Vec::new();
+        collect_assets(&dir, &mut assets, false);
+
+        assert_eq!(
+            assets,
+            vec![
+                Asset::new("index.html", b"html".as_slice()),
+                Asset::new("index.html.br", b"brotli html".as_slice()),
+                Asset::new("index.html.gz", b"gzip html".as_slice()),
+                Asset::new("assets/main.js", b"script".as_slice()),
+                Asset::new("assets/main.js.br", b"brotli bytes".as_slice()),
+                Asset::new("assets/main.js.gz", b"gzip bytes".as_slice()),
+                Asset::new("assets/logo.svg", b"svg".as_slice()),
+            ]
+        );
+    }
+
+    #[test]
+    fn legacy_collection_adds_both_compressed_representations() {
+        let original = b"html".as_slice();
+        let entries = [DirEntry::File(File::new("index.html", original))];
+        let dir = Dir::new("", &entries);
+        let mut assets = Vec::new();
+        collect_assets(&dir, &mut assets, true);
+
+        assert_eq!(assets.len(), 3);
+        assert_eq!(assets[2], Asset::new("index.html", original));
+    }
 }
